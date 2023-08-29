@@ -6,6 +6,9 @@
 package org.opensearch.knn.index;
 
 import lombok.SneakyThrows;
+import org.opensearch.action.admin.cluster.state.ClusterStateRequest;
+import org.opensearch.action.admin.indices.create.CreateIndexRequest;
+import org.opensearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.opensearch.cluster.ClusterName;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.network.NetworkModule;
@@ -33,6 +36,8 @@ import static org.opensearch.test.NodeRoles.dataNode;
 
 public class KNNSettingsTests extends KNNTestCase {
 
+    private static final String INDEX_NAME = "myindex";
+
     @SneakyThrows
     public void testGetSettingValueFromConfig() {
         long expectedKNNCircuitBreakerLimit = 13;
@@ -46,6 +51,7 @@ public class KNNSettingsTests extends KNNTestCase {
                 .getSettingValue(KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_LIMIT)).getKb();
         mockNode.close();
         assertEquals(expectedKNNCircuitBreakerLimit, actualKNNCircuitBreakerLimit);
+        assertWarnings();
     }
 
     @SneakyThrows
@@ -63,6 +69,67 @@ public class KNNSettingsTests extends KNNTestCase {
                 actualKNNCircuitBreakerLimit
 
         );
+        // set warning for deprecation of index.store.hybrid.mmap.extensions as expected temporarily, need to work on proper strategy of
+        // switching to new setting in core
+        // no-jdk distributions expected warning is a workaround for running tests locally
+        assertWarnings();
+    }
+
+    @SneakyThrows
+    public void testFilteredSearchAdvanceSetting_whenNoValuesProvidedByUsers_thenDefaultSettingsUsed() {
+        Node mockNode = createMockNode(Collections.emptyMap());
+        mockNode.start();
+        ClusterService clusterService = mockNode.injector().getInstance(ClusterService.class);
+        mockNode.client().admin().cluster().state(new ClusterStateRequest()).actionGet();
+        mockNode.client().admin().indices().create(new CreateIndexRequest(INDEX_NAME)).actionGet();
+        KNNSettings.state().setClusterService(clusterService);
+
+        Integer filteredSearchThreshold = KNNSettings.getFilteredExactSearchThreshold(INDEX_NAME);
+        mockNode.close();
+        assertEquals(KNNSettings.ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_DEFAULT_VALUE, filteredSearchThreshold);
+        assertWarnings();
+    }
+
+    @SneakyThrows
+    public void testFilteredSearchAdvanceSetting_whenValuesProvidedByUsers_thenValidateSameValues() {
+        int userDefinedThreshold = 1000;
+        int userDefinedThresholdMinValue = 0;
+        Node mockNode = createMockNode(Collections.emptyMap());
+        mockNode.start();
+        ClusterService clusterService = mockNode.injector().getInstance(ClusterService.class);
+        mockNode.client().admin().cluster().state(new ClusterStateRequest()).actionGet();
+        mockNode.client().admin().indices().create(new CreateIndexRequest(INDEX_NAME)).actionGet();
+        KNNSettings.state().setClusterService(clusterService);
+
+        final Settings filteredSearchAdvanceSettings = Settings.builder()
+            .put(KNNSettings.ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD, userDefinedThreshold)
+            .build();
+
+        mockNode.client()
+            .admin()
+            .indices()
+            .updateSettings(new UpdateSettingsRequest(filteredSearchAdvanceSettings, INDEX_NAME))
+            .actionGet();
+
+        int filteredSearchThreshold = KNNSettings.getFilteredExactSearchThreshold(INDEX_NAME);
+
+        // validate if we are able to set MinValues for the setting
+        final Settings filteredSearchAdvanceSettingsWithMinValues = Settings.builder()
+            .put(KNNSettings.ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD, userDefinedThresholdMinValue)
+            .build();
+
+        mockNode.client()
+            .admin()
+            .indices()
+            .updateSettings(new UpdateSettingsRequest(filteredSearchAdvanceSettingsWithMinValues, INDEX_NAME))
+            .actionGet();
+
+        int filteredSearchThresholdMinValue = KNNSettings.getFilteredExactSearchThreshold(INDEX_NAME);
+
+        mockNode.close();
+        assertEquals(userDefinedThreshold, filteredSearchThreshold);
+        assertEquals(userDefinedThresholdMinValue, filteredSearchThresholdMinValue);
+        assertWarnings();
     }
 
     private Node createMockNode(Map<String, Object> configSettings) throws IOException {
@@ -92,5 +159,15 @@ public class KNNSettingsTests extends KNNTestCase {
                 .put(Environment.PATH_HOME_SETTING.getKey(), tempDir)
                 .put(NetworkModule.TRANSPORT_TYPE_KEY, getTestTransportType())
                 .put(dataNode());
+    }
+
+    private void assertWarnings() {
+        // set warning for deprecation of index.store.hybrid.mmap.extensions as expected temporarily, need to work on proper strategy of
+        // switching to new setting in core
+        // no-jdk distributions expected warning is a workaround for running tests locally
+        assertWarnings(
+            "[index.store.hybrid.mmap.extensions] setting was deprecated in OpenSearch and will be removed in a future release! See the breaking changes documentation for the next major version.",
+            "no-jdk distributions that do not bundle a JDK are deprecated and will be removed in a future release"
+        );
     }
 }

@@ -18,6 +18,7 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.opensearch.knn.common.KNNConstants;
+import org.opensearch.knn.index.KNNSettings;
 import org.opensearch.knn.index.SpaceType;
 import org.opensearch.knn.index.codec.util.KNNVectorSerializer;
 import org.opensearch.knn.index.codec.util.KNNVectorSerializerFactory;
@@ -115,12 +116,15 @@ public class KNNWeight extends Weight {
          * . Hence, if filtered results are less than K and filter query is present we should shift to exact search.
          * This improves the recall.
          */
-        if (filterWeight != null && filterIdsArray.length <= knnQuery.getK()) {
+        if (filterWeight != null && canDoExactSearch(filterIdsArray.length, getTotalDocsInSegment(context))) {
             docIdsToScoreMap.putAll(doExactSearch(context, filterIdsArray));
         } else {
-            final Map<Integer, Float> annResults = doANNSearch(context, filterIdsArray);
+            Map<Integer, Float> annResults = doANNSearch(context, filterIdsArray);
             if (annResults == null) {
                 return null;
+            }
+            if (canDoExactSearchAfterANNSearch(filterIdsArray.length, annResults.size())) {
+                annResults = doExactSearch(context, filterIdsArray);
             }
             docIdsToScoreMap.putAll(annResults);
         }
@@ -170,7 +174,6 @@ public class KNNWeight extends Weight {
             if (docId == DocIdSetIterator.NO_MORE_DOCS || docId + 1 == DocIdSetIterator.NO_MORE_DOCS) {
                 break;
             }
-            log.debug("Docs in filtered docs id set is : {}", docId);
             filteredIds[filteredIdsIndex] = docId;
             filteredIdsIndex++;
             docId++;
@@ -368,5 +371,54 @@ public class KNNWeight extends Weight {
         throw new IllegalArgumentException(
             String.format(Locale.ROOT, "Unable to find the Space Type from Field Info attribute for field %s", fieldInfo.getName())
         );
+    }
+
+    private boolean canDoExactSearch(final int filterIdsCount, final int searchableDocs) {
+        log.debug(
+            "Info for doing exact search Live Docs: {}, filterIdsLength : {}, Threshold value: {}",
+            searchableDocs,
+            filterIdsCount,
+            KNNSettings.getFilteredExactSearchThreshold(knnQuery.getIndexName())
+        );
+        int filterThresholdValue = KNNSettings.getFilteredExactSearchThreshold(knnQuery.getIndexName());
+        // Refer this GitHub around more details https://github.com/opensearch-project/k-NN/issues/1049 on the logic
+        if (filterIdsCount <= knnQuery.getK()) {
+            return true;
+        }
+        // See user has defined Exact Search filtered threshold. if yes, then use that setting.
+        if (isExactSearchThresholdSettingSet(filterThresholdValue)) {
+            return filterThresholdValue >= filterIdsCount;
+        }
+        // if no setting is set, then use the default max distance computation value to see if we can do exact search.
+        return KNNConstants.MAX_DISTANCE_COMPUTATIONS <= filterIdsCount * knnQuery.getQueryVector().length;
+    }
+
+    /**
+     *  This function validates if {@link KNNSettings#ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD} is set or not. This
+     *  is done by validating if the setting value is equal to the default value.
+     * @param filterThresholdValue value of the Index Setting: {@link KNNSettings#ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_SETTING}
+     * @return boolean true if the setting is set.
+     */
+    private boolean isExactSearchThresholdSettingSet(int filterThresholdValue) {
+        return filterThresholdValue != KNNSettings.ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_DEFAULT_VALUE;
+    }
+
+    /**
+     * This condition mainly checks during filtered search we have more than K elements in filterIds but the ANN
+     * doesn't yeild K nearest neighbors.
+     * @param filterIdsCount count of filtered Doc ids
+     * @param annResultCount Count of Nearest Neighbours we got after doing filtered ANN Search.
+     * @return boolean - true if exactSearch needs to be done after ANNSearch.
+     */
+    private boolean canDoExactSearchAfterANNSearch(final int filterIdsCount, final int annResultCount) {
+        return filterWeight != null && filterIdsCount >= knnQuery.getK() && knnQuery.getK() > annResultCount;
+    }
+
+    private int getTotalDocsInSegment(final LeafReaderContext context) {
+        // This means that there is no deleted documents, hence the live docs bitset is null
+        if (context.reader().getLiveDocs() == null) {
+            return context.reader().maxDoc();
+        }
+        return context.reader().getLiveDocs().length();
     }
 }

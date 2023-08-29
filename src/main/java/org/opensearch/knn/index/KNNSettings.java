@@ -8,7 +8,7 @@ package org.opensearch.knn.index;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.OpenSearchParseException;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.opensearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.opensearch.client.Client;
@@ -73,6 +73,7 @@ public class KNNSettings {
     public static final String MODEL_INDEX_NUMBER_OF_SHARDS = "knn.model.index.number_of_shards";
     public static final String MODEL_INDEX_NUMBER_OF_REPLICAS = "knn.model.index.number_of_replicas";
     public static final String MODEL_CACHE_SIZE_LIMIT = "knn.model.cache.size.limit";
+    public static final String ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD = "index.knn.advanced.filtered_exact_search_threshold";
 
     /**
      * Default setting values
@@ -87,6 +88,8 @@ public class KNNSettings {
     public static final Integer KNN_DEFAULT_MODEL_CACHE_SIZE_LIMIT_PERCENTAGE = 10; // By default, set aside 10% of the JVM for the limit
     public static final Integer KNN_MAX_MODEL_CACHE_SIZE_LIMIT_PERCENTAGE = 25; // Model cache limit cannot exceed 25% of the JVM heap
     public static final String KNN_DEFAULT_MEMORY_CIRCUIT_BREAKER_LIMIT = "50%";
+
+    public static final Integer ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_DEFAULT_VALUE = -1;
 
     /**
      * Settings Definition
@@ -152,6 +155,13 @@ public class KNNSettings {
         1,
         0,
         Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
+
+    public static final Setting<Integer> ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_SETTING = Setting.intSetting(
+        ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD,
+        ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_DEFAULT_VALUE,
+        IndexScope,
         Setting.Property.Dynamic
     );
 
@@ -324,6 +334,10 @@ public class KNNSettings {
             return KNN_ALGO_PARAM_INDEX_THREAD_QTY_SETTING;
         }
 
+        if (ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD.equals(key)) {
+            return ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_SETTING;
+        }
+
         throw new IllegalArgumentException("Cannot find setting by key [" + key + "]");
     }
 
@@ -339,7 +353,8 @@ public class KNNSettings {
             IS_KNN_INDEX_SETTING,
             MODEL_INDEX_NUMBER_OF_SHARDS_SETTING,
             MODEL_INDEX_NUMBER_OF_REPLICAS_SETTING,
-            MODEL_CACHE_SIZE_LIMIT_SETTING
+            MODEL_CACHE_SIZE_LIMIT_SETTING,
+            ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_SETTING
         );
         return Stream.concat(settings.stream(), dynamicCacheSettings.values().stream()).collect(Collectors.toList());
     }
@@ -358,6 +373,14 @@ public class KNNSettings {
 
     public static double getCircuitBreakerUnsetPercentage() {
         return KNNSettings.state().getSettingValue(KNNSettings.KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE);
+    }
+
+    public static Integer getFilteredExactSearchThreshold(final String indexName) {
+        return KNNSettings.state().clusterService.state()
+            .getMetadata()
+            .index(indexName)
+            .getSettings()
+            .getAsInt(ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD, ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_DEFAULT_VALUE);
     }
 
     public void initialize(Client client, ClusterService clusterService) {
