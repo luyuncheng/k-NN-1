@@ -100,8 +100,8 @@ public class KNNWeightTests extends KNNTestCase {
         when(knnSettings.getSettingValue(eq(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES))).thenReturn(TimeValue.timeValueMinutes(10));
 
         final ByteSizeValue v = ByteSizeValue.parseBytesSizeValue(
-            CIRCUIT_BREAKER_LIMIT_100KB,
-            KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_LIMIT
+                CIRCUIT_BREAKER_LIMIT_100KB,
+                KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_LIMIT
         );
         knnSettingsMockedStatic.when(KNNSettings::getCircuitBreakerLimit).thenReturn(v);
         knnSettingsMockedStatic.when(KNNSettings::state).thenReturn(knnSettings);
@@ -137,15 +137,15 @@ public class KNNWeightTests extends KNNTestCase {
     @SneakyThrows
     public void testQueryResultScoreFaiss() {
         testQueryScore(
-            SpaceType.L2::scoreTranslation,
-            SEGMENT_FILES_FAISS,
-            Map.of(SPACE_TYPE, SpaceType.L2.getValue(), KNN_ENGINE, KNNEngine.FAISS.getName())
+                SpaceType.L2::scoreTranslation,
+                SEGMENT_FILES_FAISS,
+                Map.of(SPACE_TYPE, SpaceType.L2.getValue(), KNN_ENGINE, KNNEngine.FAISS.getName())
         );
         // score translation for Faiss and inner product is different from default defined in Space enum
         testQueryScore(
-            rawScore -> SpaceType.INNER_PRODUCT.scoreTranslation(-1 * rawScore),
-            SEGMENT_FILES_FAISS,
-            Map.of(SPACE_TYPE, SpaceType.INNER_PRODUCT.getValue(), KNN_ENGINE, KNNEngine.FAISS.getName())
+                rawScore -> SpaceType.INNER_PRODUCT.scoreTranslation(-1 * rawScore),
+                SEGMENT_FILES_FAISS,
+                Map.of(SPACE_TYPE, SpaceType.INNER_PRODUCT.getValue(), KNN_ENGINE, KNNEngine.FAISS.getName())
         );
     }
 
@@ -155,7 +155,7 @@ public class KNNWeightTests extends KNNTestCase {
         final Function<Float, Float> scoreTranslator = spaceType::scoreTranslation;
         final String modelId = "modelId";
         jniServiceMockedStatic.when(() -> JNIService.queryIndex(anyLong(), any(), anyInt(), anyString(), any()))
-            .thenReturn(getKNNQueryResults());
+                .thenReturn(getKNNQueryResults());
 
         final KNNQuery query = new KNNQuery(FIELD_NAME, QUERY_VECTOR, K, INDEX_NAME);
 
@@ -175,17 +175,17 @@ public class KNNWeightTests extends KNNTestCase {
         final FSDirectory directory = mock(FSDirectory.class);
         when(reader.directory()).thenReturn(directory);
         final SegmentInfo segmentInfo = new SegmentInfo(
-            directory,
-            Version.LATEST,
-            Version.LATEST,
-            SEGMENT_NAME,
-            100,
-            true,
-            KNNCodecVersion.current().getDefaultCodecDelegate(),
-            Map.of(),
-            new byte[StringHelper.ID_LENGTH],
-            Map.of(),
-            Sort.RELEVANCE
+                directory,
+                Version.LATEST,
+                Version.LATEST,
+                SEGMENT_NAME,
+                100,
+                true,
+                KNNCodecVersion.current().getDefaultCodecDelegate(),
+                Map.of(),
+                new byte[StringHelper.ID_LENGTH],
+                Map.of(),
+                Sort.RELEVANCE
         );
         segmentInfo.setFiles(SEGMENT_FILES_FAISS);
         final SegmentCommitInfo segmentCommitInfo = new SegmentCommitInfo(segmentInfo, 0, 0, 0, 0, 0, new byte[StringHelper.ID_LENGTH]);
@@ -264,17 +264,17 @@ public class KNNWeightTests extends KNNTestCase {
         when(reader.directory()).thenReturn(directory);
 
         final SegmentInfo segmentInfo = new SegmentInfo(
-            directory,
-            Version.LATEST,
-            Version.LATEST,
-            SEGMENT_NAME,
-            100,
-            false,
-            KNNCodecVersion.current().getDefaultCodecDelegate(),
-            Map.of(),
-            new byte[StringHelper.ID_LENGTH],
-            Map.of(),
-            Sort.RELEVANCE
+                directory,
+                Version.LATEST,
+                Version.LATEST,
+                SEGMENT_NAME,
+                100,
+                false,
+                KNNCodecVersion.current().getDefaultCodecDelegate(),
+                Map.of(),
+                new byte[StringHelper.ID_LENGTH],
+                Map.of(),
+                Sort.RELEVANCE
         );
         segmentInfo.setFiles(Set.of());
         final SegmentCommitInfo segmentCommitInfo = new SegmentCommitInfo(segmentInfo, 0, 0, 0, 0, 0, new byte[StringHelper.ID_LENGTH]);
@@ -295,7 +295,7 @@ public class KNNWeightTests extends KNNTestCase {
     public void testEmptyQueryResults() {
         final KNNQueryResult[] knnQueryResults = new KNNQueryResult[] {};
         jniServiceMockedStatic.when(() -> JNIService.queryIndex(anyLong(), any(), anyInt(), anyString(), any()))
-            .thenReturn(knnQueryResults);
+                .thenReturn(knnQueryResults);
 
         final KNNQuery query = new KNNQuery(FIELD_NAME, QUERY_VECTOR, K, INDEX_NAME);
         final KNNWeight knnWeight = new KNNWeight(query, 0.0f);
@@ -307,17 +307,17 @@ public class KNNWeightTests extends KNNTestCase {
         final FSDirectory directory = mock(FSDirectory.class);
         when(reader.directory()).thenReturn(directory);
         final SegmentInfo segmentInfo = new SegmentInfo(
-            directory,
-            Version.LATEST,
-            Version.LATEST,
-            SEGMENT_NAME,
-            100,
-            true,
-            KNNCodecVersion.current().getDefaultCodecDelegate(),
-            Map.of(),
-            new byte[StringHelper.ID_LENGTH],
-            Map.of(),
-            Sort.RELEVANCE
+                directory,
+                Version.LATEST,
+                Version.LATEST,
+                SEGMENT_NAME,
+                100,
+                true,
+                KNNCodecVersion.current().getDefaultCodecDelegate(),
+                Map.of(),
+                new byte[StringHelper.ID_LENGTH],
+                Map.of(),
+                Sort.RELEVANCE
         );
         segmentInfo.setFiles(SEGMENT_FILES_NMSLIB);
         final SegmentCommitInfo segmentCommitInfo = new SegmentCommitInfo(segmentInfo, 0, 0, 0, 0, 0, new byte[StringHelper.ID_LENGTH]);
@@ -339,7 +339,7 @@ public class KNNWeightTests extends KNNTestCase {
         int k = 3;
         final int[] filterDocIds = new int[] { 0, 1, 2, 3, 4, 5 };
         jniServiceMockedStatic.when(() -> JNIService.queryIndex(anyLong(), any(), anyInt(), anyString(), eq(filterDocIds)))
-            .thenReturn(getFilteredKNNQueryResults());
+                .thenReturn(getFilteredKNNQueryResults());
         final LeafReaderContext leafReaderContext = mock(LeafReaderContext.class);
         final SegmentReader reader = mock(SegmentReader.class);
         final Bits liveDocsBits = mock(Bits.class);
@@ -363,17 +363,17 @@ public class KNNWeightTests extends KNNTestCase {
         final FSDirectory directory = mock(FSDirectory.class);
         when(reader.directory()).thenReturn(directory);
         final SegmentInfo segmentInfo = new SegmentInfo(
-            directory,
-            Version.LATEST,
-            Version.LATEST,
-            SEGMENT_NAME,
-            100,
-            true,
-            KNNCodecVersion.current().getDefaultCodecDelegate(),
-            Map.of(),
-            new byte[StringHelper.ID_LENGTH],
-            Map.of(),
-            Sort.RELEVANCE
+                directory,
+                Version.LATEST,
+                Version.LATEST,
+                SEGMENT_NAME,
+                100,
+                true,
+                KNNCodecVersion.current().getDefaultCodecDelegate(),
+                Map.of(),
+                new byte[StringHelper.ID_LENGTH],
+                Map.of(),
+                Sort.RELEVANCE
         );
         segmentInfo.setFiles(SEGMENT_FILES_FAISS);
         final SegmentCommitInfo segmentCommitInfo = new SegmentCommitInfo(segmentInfo, 0, 0, 0, 0, 0, new byte[StringHelper.ID_LENGTH]);
@@ -545,12 +545,12 @@ public class KNNWeightTests extends KNNTestCase {
     }
 
     private void testQueryScore(
-        final Function<Float, Float> scoreTranslator,
-        final Set<String> segmentFiles,
-        final Map<String, String> fileAttributes
+            final Function<Float, Float> scoreTranslator,
+            final Set<String> segmentFiles,
+            final Map<String, String> fileAttributes
     ) throws IOException {
         jniServiceMockedStatic.when(() -> JNIService.queryIndex(anyLong(), any(), anyInt(), anyString(), any()))
-            .thenReturn(getKNNQueryResults());
+                .thenReturn(getKNNQueryResults());
 
         final KNNQuery query = new KNNQuery(FIELD_NAME, QUERY_VECTOR, K, INDEX_NAME);
         final KNNWeight knnWeight = new KNNWeight(query, 0.0f);
@@ -562,17 +562,17 @@ public class KNNWeightTests extends KNNTestCase {
         final FSDirectory directory = mock(FSDirectory.class);
         when(reader.directory()).thenReturn(directory);
         final SegmentInfo segmentInfo = new SegmentInfo(
-            directory,
-            Version.LATEST,
-            Version.LATEST,
-            SEGMENT_NAME,
-            100,
-            true,
-            KNNCodecVersion.current().getDefaultCodecDelegate(),
-            Map.of(),
-            new byte[StringHelper.ID_LENGTH],
-            Map.of(),
-            Sort.RELEVANCE
+                directory,
+                Version.LATEST,
+                Version.LATEST,
+                SEGMENT_NAME,
+                100,
+                true,
+                KNNCodecVersion.current().getDefaultCodecDelegate(),
+                Map.of(),
+                new byte[StringHelper.ID_LENGTH],
+                Map.of(),
+                Sort.RELEVANCE
         );
         segmentInfo.setFiles(segmentFiles);
         final SegmentCommitInfo segmentCommitInfo = new SegmentCommitInfo(segmentInfo, 0, 0, 0, 0, 0, new byte[StringHelper.ID_LENGTH]);
@@ -604,23 +604,23 @@ public class KNNWeightTests extends KNNTestCase {
 
     private Map<Integer, Float> getTranslatedScores(Function<Float, Float> scoreTranslator) {
         return DOC_ID_TO_SCORES.entrySet()
-            .stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, entry -> scoreTranslator.apply(entry.getValue())));
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> scoreTranslator.apply(entry.getValue())));
     }
 
     private KNNQueryResult[] getKNNQueryResults() {
         return DOC_ID_TO_SCORES.entrySet()
-            .stream()
-            .map(entry -> new KNNQueryResult(entry.getKey(), entry.getValue()))
-            .collect(Collectors.toList())
-            .toArray(new KNNQueryResult[0]);
+                .stream()
+                .map(entry -> new KNNQueryResult(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList())
+                .toArray(new KNNQueryResult[0]);
     }
 
     private KNNQueryResult[] getFilteredKNNQueryResults() {
         return FILTERED_DOC_ID_TO_SCORES.entrySet()
-            .stream()
-            .map(entry -> new KNNQueryResult(entry.getKey(), entry.getValue()))
-            .collect(Collectors.toList())
-            .toArray(new KNNQueryResult[0]);
+                .stream()
+                .map(entry -> new KNNQueryResult(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList())
+                .toArray(new KNNQueryResult[0]);
     }
 }
