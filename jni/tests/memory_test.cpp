@@ -35,21 +35,9 @@ TEST(FaissHNSWIndexMemoryTest, BasicAssertions) {
     GTEST_COUT << "points_num："<< points_num << " data dimension：" << dim << std::endl;
     float* dataptr = data_load;
 
-    faiss::idx_t numIds = points_num;
-    std::vector<faiss::idx_t> ids(points_num);
     std::vector<std::vector<float>> vectors;
-    for (int64_t i = 0; i < numIds; ++i) {
-        ids[i] = i;
-
-        std::vector<float> vect;
-        vect.reserve(dim);
-        for (int j = 0; j < dim; ++j) {
-            vect.push_back(*dataptr);
-	    dataptr++;
-        }
-        vectors.push_back(vect);
-    }
-
+    std::vector<int> ids(points_num);
+    test_util::set_vectors(vectors, ids, points_num, dim, dataptr);
     free(data_load);
 
     std::string indexPath = "tmp/FaissHNSWIndexMemoryTest.faiss";
@@ -99,21 +87,9 @@ TEST(NmslibHNSWIndexMemoryTest, BasicAssertions) {
     GTEST_COUT << "points_num："<< points_num << " data dimension：" << dim << std::endl;
     float* dataptr = data_load;
 
-    faiss::idx_t numIds = points_num;
-    std::vector<int> ids(points_num);
     std::vector<std::vector<float>> vectors;
-    for (int64_t i = 0; i < numIds; ++i) {
-        ids[i] = i;
-
-        std::vector<float> vect;
-        vect.reserve(dim);
-        for (int j = 0; j < dim; ++j) {
-            vect.push_back(*dataptr);
-	    dataptr++;
-        }
-        vectors.push_back(vect);
-    }
-
+    std::vector<int> ids(points_num);
+    test_util::set_vectors(vectors, ids, points_num, dim, dataptr);
     free(data_load);
 
     std::string indexPath = "tmp/NmslibHNSWIndexMemoryTest.hnsw";
@@ -170,23 +146,10 @@ TEST(FaissNSGIndexMemoryTest, BasicAssertions) {
     GTEST_COUT << "points_num："<< points_num << " data dimension：" << dim << std::endl;
     float* dataptr = data_load;
 
-    faiss::idx_t numIds = points_num;
-    std::vector<faiss::idx_t> ids(points_num);
     std::vector<std::vector<float>> vectors;
-    for (int64_t i = 0; i < numIds; ++i) {
-        ids[i] = i;
-
-        std::vector<float> vect;
-        vect.reserve(dim);
-        for (int j = 0; j < dim; ++j) {
-            vect.push_back(*dataptr);
-	    dataptr++;
-        }
-        vectors.push_back(vect);
-    }
-
+    std::vector<int> ids(points_num);
+    test_util::set_vectors(vectors, ids, points_num, dim, dataptr);
     free(data_load);
-    malloc_trim(0);
 
     std::string indexPath = "tmp/FaissNSGIndexMemoryTest.faiss";
     std::string spaceType = knn_jni::L2;
