@@ -59,6 +59,10 @@ TEST(FaissHNSWIndexMemoryTest, BasicAssertions) {
                         jniEnv, reinterpret_cast<jobjectArray>(&vectors)))
             .WillRepeatedly(Return(vectors.size()));
 
+    EXPECT_CALL(mockJNIUtil,
+                GetJavaIntArrayLength(jniEnv, reinterpret_cast<jintArray>(&ids)))
+            .WillRepeatedly(Return(ids.size()));
+
     // Create the index
     knn_jni::faiss_wrapper::CreateIndex(
             &mockJNIUtil, jniEnv, reinterpret_cast<jintArray>(&ids),
@@ -168,6 +172,10 @@ TEST(FaissNSGIndexMemoryTest, BasicAssertions) {
                 GetJavaObjectArrayLength(
                         jniEnv, reinterpret_cast<jobjectArray>(&vectors)))
             .WillRepeatedly(Return(vectors.size()));
+
+    EXPECT_CALL(mockJNIUtil,
+                GetJavaIntArrayLength(jniEnv, reinterpret_cast<jintArray>(&ids)))
+            .WillRepeatedly(Return(ids.size()));
 
     // Create the index
     knn_jni::faiss_wrapper::CreateIndex(
