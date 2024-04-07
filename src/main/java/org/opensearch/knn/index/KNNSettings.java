@@ -77,7 +77,7 @@ public class KNNSettings {
     public static final String MODEL_CACHE_SIZE_LIMIT = "knn.model.cache.size.limit";
     public static final String ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD = "index.knn.advanced.filtered_exact_search_threshold";
     public static final String KNN_FAISS_AVX2_DISABLED = "knn.faiss.avx2.disabled";
-    public static final String KNN_SYNTHETIC_SOURCE_ENABLED = "knn.synthetic_source.enabled";
+    public static final String KNN_SYNTHETIC_SOURCE_ENABLED = "index.knn.synthetic_source.enabled";
 
     /**
      * Default setting values
@@ -238,7 +238,8 @@ public class KNNSettings {
     public static final Setting<Boolean> KNN_SYNTHETIC_SOURCE_ENABLED_SETTING = Setting.boolSetting(
             KNN_SYNTHETIC_SOURCE_ENABLED,
             false,
-            IndexScope
+            IndexScope,
+            Dynamic
     );
 
     /**
