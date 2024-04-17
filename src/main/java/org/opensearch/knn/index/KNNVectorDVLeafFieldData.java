@@ -50,44 +50,45 @@ public class KNNVectorDVLeafFieldData implements LeafFieldData {
 
     @Override
     public SortedBinaryDocValues getBytesValues() {
+        throw new UnsupportedOperationException("knn vector field '" + fieldName + "' doesn't support sorting");
+    }
+
+    @Override
+    public DocValueFetcher.Leaf getLeafValueFetcher(DocValueFormat format) {
+        final BinaryDocValues binaryDocValues;
+
         try {
-            final BinaryDocValues binaryDocValues = DocValues.getBinary(reader, fieldName);
-            SortedBinaryDocValues sortedBinaryDocValues = new SortedBinaryDocValues() {
+            binaryDocValues = DocValues.getBinary(reader, fieldName);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot load KNNDocValues from lucene", e);
+        }
 
-                private boolean docExists = false;
-                float[] floats = null;
-                int pos = 0;
-                BytesRefBuilder bytesRefBuilder = new BytesRefBuilder();
+        return new DocValueFetcher.Leaf() {
+            float[] floats;
+            boolean docExists = false;
+            int pos = 0;
 
-                @Override
-                public boolean advanceExact(int doc) throws IOException {
-                    if (binaryDocValues.advanceExact(doc)) {
-                        docExists = true;
-                        floats = vectorDataType.getVectorFromDocValues(binaryDocValues.binaryValue());
-                        pos = 0;
-                        return docExists;
-                    }
-                    docExists = false;
+            @Override
+            public boolean advanceExact(int docId) throws IOException {
+                if (binaryDocValues.advanceExact(docId)) {
+                    docExists = true;
+                    floats = vectorDataType.getVectorFromDocValues(binaryDocValues.binaryValue());
+                    pos = 0;
                     return docExists;
                 }
+                docExists = false;
+                return docExists;
+            }
 
-                @Override
-                public int docValueCount() {
-                    return docExists ? floats.length : 1;
-                }
+            @Override
+            public int docValueCount() throws IOException {
+                return floats.length;
+            }
 
-                @Override
-                public BytesRef nextValue() throws IOException {
-                    Float v = floats[pos++];
-                    bytesRefBuilder.clear();
-                    bytesRefBuilder.copyChars(v.toString());
-                    return bytesRefBuilder.get();
-                }
-            };
-            return sortedBinaryDocValues;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+            @Override
+            public Object nextValue() throws IOException {
+                return floats[pos++];
+            }
+        };
     }
 }

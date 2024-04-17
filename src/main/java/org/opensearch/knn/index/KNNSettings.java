@@ -20,6 +20,7 @@ import org.opensearch.core.common.unit.ByteSizeUnit;
 import org.opensearch.core.common.unit.ByteSizeValue;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.index.IndexModule;
+import org.opensearch.index.IndexSettings;
 import org.opensearch.knn.index.memory.NativeMemoryCacheManager;
 import org.opensearch.knn.index.memory.NativeMemoryCacheManagerDto;
 import org.opensearch.knn.index.util.IndexHyperParametersUtil;
@@ -410,12 +411,13 @@ public class KNNSettings {
             .getAsInt(ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD, ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_DEFAULT_VALUE);
     }
 
-    public static boolean isKNNSyntheticEnabled(final String indexName) {
-        return KNNSettings.state().clusterService.state()
-                .getMetadata()
-                .index(indexName)
-                .getSettings()
-                .getAsBoolean(KNN_SYNTHETIC_SOURCE_ENABLED, false);
+    /**
+     * check this index enabled/disabled synthetic source
+     * @param indexSettings settings
+     */
+    public static boolean isKNNSyntheticEnabled(IndexSettings indexSettings) {
+        return indexSettings.getValue(KNN_SYNTHETIC_SOURCE_ENABLED_SETTING);
+
     }
 
     public void initialize(Client client, ClusterService clusterService) {

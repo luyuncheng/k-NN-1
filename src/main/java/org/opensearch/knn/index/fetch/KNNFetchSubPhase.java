@@ -13,13 +13,13 @@ package org.opensearch.knn.index.fetch;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.log4j.Log4j2;
 import org.apache.lucene.index.LeafReaderContext;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.index.IndexSettings;
 import org.opensearch.index.mapper.DocValueFetcher;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.mapper.MapperService;
@@ -43,12 +43,14 @@ import static org.opensearch.knn.common.KNNConstants.BYTES_PER_KILOBYTES;
  * Fetch sub phase which pull data from doc values.
  * and fulfill the value into source map
  */
+@Log4j2
 public class KNNFetchSubPhase implements FetchSubPhase {
-    private static Logger logger = LogManager.getLogger(KNNFetchSubPhase.class);
 
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext fetchContext) throws IOException {
-        if (!KNNSettings.isKNNSyntheticEnabled(fetchContext.getIndexName())) {
+        IndexSettings indexSettings = fetchContext.getIndexSettings();
+        if (!KNNSettings.isKNNSyntheticEnabled(indexSettings)) {
+            log.debug("Synthetic is disabled")
             return null;
         }
         MapperService mapperService = fetchContext.mapperService();
@@ -92,7 +94,6 @@ public class KNNFetchSubPhase implements FetchSubPhase {
 
             if (hasNested) {
                 //TODO handle nested field
-                logger.debug("Use nested:" + hasNested);
             }
             for (DocValueField f : fields) {
                 if (maps.containsKey(f.field)) {
