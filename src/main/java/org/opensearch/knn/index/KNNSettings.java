@@ -417,7 +417,6 @@ public class KNNSettings {
      */
     public static boolean isKNNSyntheticEnabled(IndexSettings indexSettings) {
         return indexSettings.getValue(KNN_SYNTHETIC_SOURCE_ENABLED_SETTING);
-
     }
 
     public void initialize(Client client, ClusterService clusterService) {

@@ -50,7 +50,7 @@ public class KNNFetchSubPhase implements FetchSubPhase {
     public FetchSubPhaseProcessor getProcessor(FetchContext fetchContext) throws IOException {
         IndexSettings indexSettings = fetchContext.getIndexSettings();
         if (!KNNSettings.isKNNSyntheticEnabled(indexSettings)) {
-            log.debug("Synthetic is disabled")
+            log.debug("Synthetic is disabled");
             return null;
         }
         MapperService mapperService = fetchContext.mapperService();
