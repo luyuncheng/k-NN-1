@@ -66,14 +66,12 @@ public class KNNVectorDVLeafFieldData implements LeafFieldData {
         return new DocValueFetcher.Leaf() {
             float[] floats;
             boolean docExists = false;
-            int pos = 0;
 
             @Override
             public boolean advanceExact(int docId) throws IOException {
                 if (binaryDocValues.advanceExact(docId)) {
                     docExists = true;
                     floats = vectorDataType.getVectorFromDocValues(binaryDocValues.binaryValue());
-                    pos = 0;
                     return docExists;
                 }
                 docExists = false;
@@ -82,12 +80,12 @@ public class KNNVectorDVLeafFieldData implements LeafFieldData {
 
             @Override
             public int docValueCount() throws IOException {
-                return floats.length;
+                return 1;
             }
 
             @Override
             public Object nextValue() throws IOException {
-                return floats[pos++];
+                return floats;
             }
         };
     }

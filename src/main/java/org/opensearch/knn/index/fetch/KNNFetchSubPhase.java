@@ -99,7 +99,10 @@ public class KNNFetchSubPhase implements FetchSubPhase {
                 if (maps.containsKey(f.field)) {
                     continue;
                 }
-                maps.put(f.field, f.fetcher.fetchValues(hitContext.sourceLookup()));
+                List<Object> docValuesSource =  f.fetcher.fetchValues(hitContext.sourceLookup());
+                if (docValuesSource.size() > 0) {
+                    maps.put(f.field, docValuesSource.get(0));
+                }
             }
             BytesStreamOutput streamOutput = new BytesStreamOutput(BYTES_PER_KILOBYTES);
             XContentBuilder builder = new XContentBuilder(XContentType.JSON.xContent(), streamOutput);
