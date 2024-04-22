@@ -19,13 +19,13 @@ namespace knn_jni {
     namespace faiss_wrapper {
         // Create an index with ids and vectors. The configuration is defined by values in the Java map, parametersJ.
         // The index is serialized to indexPathJ.
-        void CreateIndex(knn_jni::JNIUtilInterface * jniUtil, JNIEnv * env, jintArray idsJ, jobjectArray vectorsJ,
+        void CreateIndex(knn_jni::JNIUtilInterface * jniUtil, JNIEnv * env, jintArray idsJ, jlong vectorsAddressJ, jint dimJ,
                          jstring indexPathJ, jobject parametersJ);
 
         // Create an index with ids and vectors. Instead of creating a new index, this function creates the index
         // based off of the template index passed in. The index is serialized to indexPathJ.
         void CreateIndexFromTemplate(knn_jni::JNIUtilInterface * jniUtil, JNIEnv * env, jintArray idsJ,
-                                     jobjectArray vectorsJ, jstring indexPathJ, jbyteArray templateIndexJ,
+                                     jlong vectorsAddressJ, jint dimJ, jstring indexPathJ, jbyteArray templateIndexJ,
                                      jobject parametersJ);
 
         // Load an index from indexPathJ into memory.
@@ -73,6 +73,18 @@ namespace knn_jni {
         // Return the serialized representation
         jbyteArray TrainIndex(knn_jni::JNIUtilInterface * jniUtil, JNIEnv * env, jobject parametersJ, jint dimension,
                               jlong trainVectorsPointerJ);
+
+        /*
+         * Perform a range search against the index located in memory at indexPointerJ.
+         *
+         * @param indexPointerJ - pointer to the index
+         * @param queryVectorJ - the query vector
+         * @param radiusJ - the radius for the range search
+         * @param maxResultsWindowJ - the maximum number of results to return
+         * @return an array of RangeQueryResults
+         */
+        jobjectArray RangeSearch(knn_jni::JNIUtilInterface *jniUtil, JNIEnv *env, jlong indexPointerJ, jfloatArray queryVectorJ,
+                    jfloat radiusJ, jint maxResultsWindowJ);
     }
 }
 

@@ -50,27 +50,33 @@ class FaissService {
     }
 
     /**
-     * Create an index for the native library
+     * Create an index for the native library The memory occupied by the vectorsAddress will be freed up during the
+     * function call. So Java layer doesn't need to free up the memory. This is not an ideal behavior because Java layer
+     * created the memory address and that should only free up the memory. We are tracking the proper fix for this on this
+     * <a href="https://github.com/opensearch-project/k-NN/issues/1600">issue</a>
      *
      * @param ids array of ids mapping to the data passed in
-     * @param data array of float arrays to be indexed
+     * @param vectorsAddress address of native memory where vectors are stored
+     * @param dim dimension of the vector to be indexed
      * @param indexPath path to save index file to
      * @param parameters parameters to build index
      */
-    public static native void createIndex(int[] ids, float[][] data, String indexPath, Map<String, Object> parameters);
+    public static native void createIndex(int[] ids, long vectorsAddress, int dim, String indexPath, Map<String, Object> parameters);
 
     /**
      * Create an index for the native library with a provided template index
      *
      * @param ids array of ids mapping to the data passed in
-     * @param data array of float arrays to be indexed
+     * @param vectorsAddress address of native memory where vectors are stored
+     * @param dim dimension of the vector to be indexed
      * @param indexPath path to save index file to
      * @param templateIndex empty template index
      * @param parameters additional build time parameters
      */
     public static native void createIndexFromTemplate(
         int[] ids,
-        float[][] data,
+        long vectorsAddress,
+        int dim,
         String indexPath,
         byte[] templateIndex,
         Map<String, Object> parameters
@@ -173,18 +179,26 @@ class FaissService {
     public static native byte[] trainIndex(Map<String, Object> indexParameters, int dimension, long trainVectorsPointer);
 
     /**
+     * <p>
+     * The function is deprecated. Use {@link JNICommons#storeVectorData(long, float[][], long)}
+     * </p>
      * Transfer vectors from Java to native
      *
      * @param vectorsPointer pointer to vectors in native memory. Should be 0 to create vector as well
      * @param trainingData data to be transferred
      * @return pointer to native memory location of training data
      */
+    @Deprecated(since = "2.14.0", forRemoval = true)
     public static native long transferVectors(long vectorsPointer, float[][] trainingData);
 
     /**
-     * Free vectors from memory
+     * Range search index
      *
-     * @param vectorsPointer to be freed
+     * @param indexPointer pointer to index in memory
+     * @param queryVector vector to be used for query
+     * @param radius search within radius threshold
+     * @param indexMaxResultWindow maximum number of results to return
+     * @return KNNQueryResult array of neighbors within radius
      */
-    public static native void freeVectors(long vectorsPointer);
+    public static native KNNQueryResult[] rangeSearchIndex(long indexPointer, float[] queryVector, float radius, int indexMaxResultWindow);
 }

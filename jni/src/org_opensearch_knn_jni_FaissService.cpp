@@ -13,7 +13,6 @@
 
 #include <jni.h>
 
-#include <algorithm>
 #include <vector>
 
 #include "faiss_wrapper.h"
@@ -41,11 +40,11 @@ void JNI_OnUnload(JavaVM *vm, void *reserved) {
 }
 
 JNIEXPORT void JNICALL Java_org_opensearch_knn_jni_FaissService_createIndex(JNIEnv * env, jclass cls, jintArray idsJ,
-                                                                            jobjectArray vectorsJ, jstring indexPathJ,
-                                                                            jobject parametersJ)
+                                                                            jlong vectorsAddressJ, jint dimJ,
+                                                                            jstring indexPathJ, jobject parametersJ)
 {
     try {
-        knn_jni::faiss_wrapper::CreateIndex(&jniUtil, env, idsJ, vectorsJ, indexPathJ, parametersJ);
+        knn_jni::faiss_wrapper::CreateIndex(&jniUtil, env, idsJ, vectorsAddressJ, dimJ, indexPathJ, parametersJ);
     } catch (...) {
         jniUtil.CatchCppExceptionAndThrowJava(env);
     }
@@ -53,13 +52,14 @@ JNIEXPORT void JNICALL Java_org_opensearch_knn_jni_FaissService_createIndex(JNIE
 
 JNIEXPORT void JNICALL Java_org_opensearch_knn_jni_FaissService_createIndexFromTemplate(JNIEnv * env, jclass cls,
                                                                                         jintArray idsJ,
-                                                                                        jobjectArray vectorsJ,
+                                                                                        jlong vectorsAddressJ,
+                                                                                        jint dimJ,
                                                                                         jstring indexPathJ,
                                                                                         jbyteArray templateIndexJ,
                                                                                         jobject parametersJ)
 {
     try {
-        knn_jni::faiss_wrapper::CreateIndexFromTemplate(&jniUtil, env, idsJ, vectorsJ, indexPathJ, templateIndexJ, parametersJ);
+        knn_jni::faiss_wrapper::CreateIndexFromTemplate(&jniUtil, env, idsJ, vectorsAddressJ, dimJ, indexPathJ, templateIndexJ, parametersJ);
     } catch (...) {
         jniUtil.CatchCppExceptionAndThrowJava(env);
     }
@@ -191,11 +191,16 @@ JNIEXPORT jlong JNICALL Java_org_opensearch_knn_jni_FaissService_transferVectors
     return (jlong) vect;
 }
 
-JNIEXPORT void JNICALL Java_org_opensearch_knn_jni_FaissService_freeVectors(JNIEnv * env, jclass cls,
-                                                                            jlong vectorsPointerJ)
+JNIEXPORT jobjectArray JNICALL Java_org_opensearch_knn_jni_FaissService_rangeSearchIndex(JNIEnv * env, jclass cls,
+                                                                                   jlong indexPointerJ,
+                                                                                   jfloatArray queryVectorJ,
+                                                                                   jfloat radiusJ, jint maxResultWindowJ)
 {
-    if (vectorsPointerJ != 0) {
-        auto *vect = reinterpret_cast<std::vector<float>*>(vectorsPointerJ);
-        delete vect;
+    try {
+        return knn_jni::faiss_wrapper::RangeSearch(&jniUtil, env, indexPointerJ, queryVectorJ, radiusJ, maxResultWindowJ);
+
+    } catch (...) {
+        jniUtil.CatchCppExceptionAndThrowJava(env);
     }
+    return nullptr;
 }

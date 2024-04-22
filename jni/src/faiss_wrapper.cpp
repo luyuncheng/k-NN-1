@@ -81,15 +81,19 @@ bool isIndexIVFPQL2(faiss::Index * index);
 // IndexIDMap which has member that will point to underlying index that stores the data
 faiss::IndexIVFPQ * extractIVFPQIndex(faiss::Index * index);
 
-void knn_jni::faiss_wrapper::CreateIndex(knn_jni::JNIUtilInterface * jniUtil, JNIEnv * env, jintArray idsJ,
-                                         jobjectArray vectorsJ, jstring indexPathJ, jobject parametersJ) {
+void knn_jni::faiss_wrapper::CreateIndex(knn_jni::JNIUtilInterface * jniUtil, JNIEnv * env, jintArray idsJ, jlong vectorsAddressJ, jint dimJ,
+                                         jstring indexPathJ, jobject parametersJ) {
 
     if (idsJ == nullptr) {
         throw std::runtime_error("IDs cannot be null");
     }
 
-    if (vectorsJ == nullptr) {
-        throw std::runtime_error("Vectors cannot be null");
+    if (vectorsAddressJ <= 0) {
+        throw std::runtime_error("VectorsAddress cannot be less than 0");
+    }
+
+    if(dimJ <= 0) {
+        throw std::runtime_error("Vectors dimensions cannot be less than or equal to 0");
     }
 
     if (indexPathJ == nullptr) {
@@ -109,15 +113,19 @@ void knn_jni::faiss_wrapper::CreateIndex(knn_jni::JNIUtilInterface * jniUtil, JN
     std::string spaceTypeCpp(jniUtil->ConvertJavaObjectToCppString(env, spaceTypeJ));
     faiss::MetricType metric = TranslateSpaceToMetric(spaceTypeCpp);
 
-    // Read data set
-    int numVectors = jniUtil->GetJavaObjectArrayLength(env, vectorsJ);
+    // Read vectors from memory address
+    auto *inputVectors = reinterpret_cast<std::vector<float>*>(vectorsAddressJ);
+    int dim = (int)dimJ;
+    // The number of vectors can be int here because a lucene segment number of total docs never crosses INT_MAX value
+    int numVectors = (int) (inputVectors->size() / (uint64_t) dim);
+    if(numVectors == 0) {
+        throw std::runtime_error("Number of vectors cannot be 0");
+    }
+
     int numIds = jniUtil->GetJavaIntArrayLength(env, idsJ);
     if (numIds != numVectors) {
         throw std::runtime_error("Number of IDs does not match number of vectors");
     }
-
-    int dim = jniUtil->GetInnerDimensionOf2dJavaFloatArray(env, vectorsJ);
-    auto dataset = jniUtil->Convert2dJavaObjectArrayToCppFloatVector(env, vectorsJ, dim);
 
     // Create faiss index
     jobject indexDescriptionJ = knn_jni::GetJObjectFromMapOrThrow(parametersCpp, knn_jni::INDEX_DESCRIPTION);
@@ -148,22 +156,30 @@ void knn_jni::faiss_wrapper::CreateIndex(knn_jni::JNIUtilInterface * jniUtil, JN
 
     auto idVector = jniUtil->ConvertJavaIntArrayToCppIntVector(env, idsJ);
     faiss::IndexIDMap idMap = faiss::IndexIDMap(indexWriter.get());
-    idMap.add_with_ids(numVectors, dataset.data(), idVector.data());
+    idMap.add_with_ids(numVectors, inputVectors->data(), idVector.data());
 
     // Write the index to disk
     std::string indexPathCpp(jniUtil->ConvertJavaStringToCppString(env, indexPathJ));
     faiss::write_index(&idMap, indexPathCpp.c_str());
+    // Releasing the vectorsAddressJ memory as that is not required once we have created the index.
+    // This is not the ideal approach, please refer this gh issue for long term solution:
+    // https://github.com/opensearch-project/k-NN/issues/1600
+    delete inputVectors;
 }
 
 void knn_jni::faiss_wrapper::CreateIndexFromTemplate(knn_jni::JNIUtilInterface * jniUtil, JNIEnv * env, jintArray idsJ,
-                                                     jobjectArray vectorsJ, jstring indexPathJ,
+                                                     jlong vectorsAddressJ, jint dimJ, jstring indexPathJ,
                                                      jbyteArray templateIndexJ, jobject parametersJ) {
     if (idsJ == nullptr) {
         throw std::runtime_error("IDs cannot be null");
     }
 
-    if (vectorsJ == nullptr) {
-        throw std::runtime_error("Vectors cannot be null");
+    if (vectorsAddressJ <= 0) {
+        throw std::runtime_error("VectorsAddress cannot be less than 0");
+    }
+
+    if(dimJ <= 0) {
+        throw std::runtime_error("Vectors dimensions cannot be less than or equal to 0");
     }
 
     if (indexPathJ == nullptr) {
@@ -183,14 +199,14 @@ void knn_jni::faiss_wrapper::CreateIndexFromTemplate(knn_jni::JNIUtilInterface *
     jniUtil->DeleteLocalRef(env, parametersJ);
 
     // Read data set
-    int numVectors = jniUtil->GetJavaObjectArrayLength(env, vectorsJ);
+    // Read vectors from memory address
+    auto *inputVectors = reinterpret_cast<std::vector<float>*>(vectorsAddressJ);
+    int dim = (int)dimJ;
+    int numVectors = (int) (inputVectors->size() / (uint64_t) dim);
     int numIds = jniUtil->GetJavaIntArrayLength(env, idsJ);
     if (numIds != numVectors) {
         throw std::runtime_error("Number of IDs does not match number of vectors");
     }
-
-    int dim = jniUtil->GetInnerDimensionOf2dJavaFloatArray(env, vectorsJ);
-    auto dataset = jniUtil->Convert2dJavaObjectArrayToCppFloatVector(env, vectorsJ, dim);
 
     // Get vector of bytes from jbytearray
     int indexBytesCount = jniUtil->GetJavaBytesArrayLength(env, templateIndexJ);
@@ -208,8 +224,11 @@ void knn_jni::faiss_wrapper::CreateIndexFromTemplate(knn_jni::JNIUtilInterface *
 
     auto idVector = jniUtil->ConvertJavaIntArrayToCppIntVector(env, idsJ);
     faiss::IndexIDMap idMap =  faiss::IndexIDMap(indexWriter.get());
-    idMap.add_with_ids(numVectors, dataset.data(), idVector.data());
-
+    idMap.add_with_ids(numVectors, inputVectors->data(), idVector.data());
+    // Releasing the vectorsAddressJ memory as that is not required once we have created the index.
+    // This is not the ideal approach, please refer this gh issue for long term solution:
+    // https://github.com/opensearch-project/k-NN/issues/1600
+    delete inputVectors;
     // Write the index to disk
     std::string indexPathCpp(jniUtil->ConvertJavaStringToCppString(env, indexPathJ));
     faiss::write_index(&idMap, indexPathCpp.c_str());
@@ -567,4 +586,48 @@ faiss::IndexIVFPQ * extractIVFPQIndex(faiss::Index * index) {
     }
 
     throw std::runtime_error("Unable to extract IVFPQ index. IVFPQ index not present.");
+}
+
+jobjectArray knn_jni::faiss_wrapper::RangeSearch(knn_jni::JNIUtilInterface *jniUtil, JNIEnv *env, jlong indexPointerJ,
+                                                 jfloatArray queryVectorJ, jfloat radiusJ, jint maxResultWindowJ) {
+    if (queryVectorJ == nullptr) {
+        throw std::runtime_error("Query Vector cannot be null");
+    }
+
+    auto *indexReader = reinterpret_cast<faiss::IndexIDMap *>(indexPointerJ);
+
+    if (indexReader == nullptr) {
+        throw std::runtime_error("Invalid pointer to indexReader");
+    }
+
+    float *rawQueryVector = jniUtil->GetFloatArrayElements(env, queryVectorJ, nullptr);
+
+    // The res will be freed by ~RangeSearchResult() in FAISS
+    // The second parameter is always true, as lims is allocated by FAISS
+    faiss::RangeSearchResult res(1, true);
+    indexReader->range_search(1, rawQueryVector, radiusJ, &res);
+
+    // lims is structured to support batched queries, it has a length of nq + 1 (where nq is the number of queries),
+    // lims[i] - lims[i-1] gives the number of results for the i-th query. With a single query we used in k-NN,
+    // res.lims[0] is always 0, and res.lims[1] gives the total number of matching entries found.
+    int resultSize = res.lims[1];
+
+    // Limit the result size to maxResultWindowJ so that we don't return more than the max result window
+    // TODO: In the future, we should prevent this via FAISS's ResultHandler.
+    if (resultSize > maxResultWindowJ) {
+        resultSize = maxResultWindowJ;
+    }
+
+    jclass resultClass = jniUtil->FindClass(env,"org/opensearch/knn/index/query/KNNQueryResult");
+    jmethodID allArgs = jniUtil->FindMethod(env, "org/opensearch/knn/index/query/KNNQueryResult", "<init>");
+
+    jobjectArray results = jniUtil->NewObjectArray(env, resultSize, resultClass, nullptr);
+
+    jobject result;
+    for(int i = 0; i < resultSize; ++i) {
+        result = jniUtil->NewObject(env, resultClass, allArgs, res.labels[i], res.distances[i]);
+        jniUtil->SetObjectArrayElement(env, results, i, result);
+    }
+
+    return results;
 }

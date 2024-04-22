@@ -21,18 +21,18 @@ extern "C" {
 /*
  * Class:     org_opensearch_knn_jni_FaissService
  * Method:    createIndex
- * Signature: ([I[[FLjava/lang/String;Ljava/util/Map;)V
+ * Signature: ([IJILjava/lang/String;Ljava/util/Map;)V
  */
 JNIEXPORT void JNICALL Java_org_opensearch_knn_jni_FaissService_createIndex
-  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobject);
+        (JNIEnv *, jclass, jintArray, jlong, jint, jstring, jobject);
 
 /*
  * Class:     org_opensearch_knn_jni_FaissService
  * Method:    createIndexFromTemplate
- * Signature: ([I[[FLjava/lang/String;[BLjava/util/Map;)V
+ * Signature: ([IJILjava/lang/String;[BLjava/util/Map;)V
  */
 JNIEXPORT void JNICALL Java_org_opensearch_knn_jni_FaissService_createIndexFromTemplate
-  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jbyteArray, jobject);
+  (JNIEnv *, jclass, jintArray, jlong, jint, jstring, jbyteArray, jobject);
 
 /*
  * Class:     org_opensearch_knn_jni_FaissService
@@ -123,12 +123,12 @@ JNIEXPORT jlong JNICALL Java_org_opensearch_knn_jni_FaissService_transferVectors
   (JNIEnv *, jclass, jlong, jobjectArray);
 
 /*
- * Class:     org_opensearch_knn_jni_FaissService
- * Method:    freeVectors
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_org_opensearch_knn_jni_FaissService_freeVectors
-  (JNIEnv *, jclass, jlong);
+* Class:     org_opensearch_knn_jni_FaissService
+* Method:    rangeSearchIndex
+* Signature: (J[F[F)J
+*/
+JNIEXPORT jobjectArray JNICALL Java_org_opensearch_knn_jni_FaissService_rangeSearchIndex
+  (JNIEnv *, jclass, jlong, jfloatArray, jfloat, jint);
 
 #ifdef __cplusplus
 }

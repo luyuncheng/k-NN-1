@@ -117,7 +117,7 @@ public class KNNWeight extends Weight {
          * This improves the recall.
          */
         if (filterWeight != null && canDoExactSearch(cardinality)) {
-            docIdsToScoreMap.putAll(doExactSearch(context, filterBitSet));
+            docIdsToScoreMap.putAll(doExactSearch(context, filterBitSet, cardinality));
         } else {
             Map<Integer, Float> annResults = doANNSearch(context, filterBitSet, cardinality);
             if (annResults == null) {
@@ -131,7 +131,7 @@ public class KNNWeight extends Weight {
                     annResults.size(),
                     cardinality
                 );
-                annResults = doExactSearch(context, filterBitSet);
+                annResults = doExactSearch(context, filterBitSet, cardinality);
             }
             docIdsToScoreMap.putAll(annResults);
         }
@@ -277,16 +277,25 @@ public class KNNWeight extends Weight {
                 throw new RuntimeException("Index has already been closed");
             }
             int[] parentIds = getParentIdsArray(context);
-            results = JNIService.queryIndex(
-                indexAllocation.getMemoryAddress(),
-                knnQuery.getQueryVector(),
-                knnQuery.getK(),
-                knnEngine,
-                filterIds,
-                filterType.getValue(),
-                parentIds
-            );
-
+            if (knnQuery.getK() > 0) {
+                results = JNIService.queryIndex(
+                    indexAllocation.getMemoryAddress(),
+                    knnQuery.getQueryVector(),
+                    knnQuery.getK(),
+                    knnEngine,
+                    filterIds,
+                    filterType.getValue(),
+                    parentIds
+                );
+            } else {
+                results = JNIService.radiusQueryIndex(
+                    indexAllocation.getMemoryAddress(),
+                    knnQuery.getQueryVector(),
+                    knnQuery.getRadius(),
+                    knnEngine,
+                    knnQuery.getContext().getMaxResultWindow()
+                );
+            }
         } catch (Exception e) {
             GRAPH_QUERY_ERRORS.increment();
             throw new RuntimeException(e);
@@ -309,10 +318,10 @@ public class KNNWeight extends Weight {
             .collect(Collectors.toMap(KNNQueryResult::getId, result -> knnEngine.score(result.getScore(), spaceType)));
     }
 
-    private Map<Integer, Float> doExactSearch(final LeafReaderContext leafReaderContext, final BitSet filterIdsBitSet) {
+    private Map<Integer, Float> doExactSearch(final LeafReaderContext leafReaderContext, final BitSet filterIdsBitSet, int cardinality) {
         try {
             // Creating min heap and init with MAX DocID and Score as -INF.
-            final HitQueue queue = new HitQueue(this.knnQuery.getK(), true);
+            final HitQueue queue = new HitQueue(Math.min(this.knnQuery.getK(), cardinality), true);
             ScoreDoc topDoc = queue.top();
             final Map<Integer, Float> docToScore = new HashMap<>();
             FilteredIdsKNNIterator iterator = getFilteredKNNIterator(leafReaderContext, filterIdsBitSet);
@@ -406,6 +415,9 @@ public class KNNWeight extends Weight {
             filterIdsCount,
             KNNSettings.getFilteredExactSearchThreshold(knnQuery.getIndexName())
         );
+        if (knnQuery.getRadius() != null) {
+            return false;
+        }
         int filterThresholdValue = KNNSettings.getFilteredExactSearchThreshold(knnQuery.getIndexName());
         // Refer this GitHub around more details https://github.com/opensearch-project/k-NN/issues/1049 on the logic
         if (filterIdsCount <= knnQuery.getK()) {
