@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class KNNSyntheticSourceIT extends KNNRestTestCase {
 
-    public void testSyntheticSourceSearch_whenEnabledSynthetic_thenReturnSource() throws IOException {
+    public void testSyntheticSourceSearch_whenEnabledSynthetic_thenReturnSource() throws IOException, ParseException {
         String indexNameWithSynthetic = "test-index-synthetic";
         String fieldName = "test-field-1";
         Integer dimension = 2;
@@ -56,7 +56,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
                 .endObject()
                 .endObject();
 
-        String mapping = Strings.toString(builder);
+        String mapping = builder.toString();
         Settings indexSettingWithSynthetic = Settings.builder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 0)
@@ -74,7 +74,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         assertTrue(resp1.contains("\"test-field-1\":[6.0,6.0]"));
     }
 
-    public void testSyntheticSourceSearch_whenDisabledSynthetic_thenReturnSource() throws IOException {
+    public void testSyntheticSourceSearch_whenDisabledSynthetic_thenReturnSource() throws IOException, ParseException {
 
         String indexNameWithoutSynthetic = "test-index-no-synthetic";
         String fieldName = "test-field-1";
@@ -103,8 +103,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
                 .endObject()
                 .endObject()
                 .endObject();
-        String mapping = Strings.toString(builder);
-
+        String mapping = builder.toString();
         Settings indexSettingWithoutSynthetic = Settings.builder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 0)
@@ -122,7 +121,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         assertFalse(resp2.contains("\"test-field-1\":[6.0,6.0]"));
     }
 
-    public void testSyntheticSourceReindex_whenEnabledSynthetic_thenSuccess() throws IOException {
+    public void testSyntheticSourceReindex_whenEnabledSynthetic_thenSuccess() throws IOException, ParseException {
         String indexNameWithSynthetic = "test-index-synthetic";
         String reindexNameWithSynthetic = "test-reindex-synthetic";
         String fieldName = "test-field-1";
@@ -151,8 +150,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
                 .endObject()
                 .endObject()
                 .endObject();
-        String mapping = Strings.toString(builder);
-
+        String mapping = builder.toString();
         Settings indexSettingWithSynthetic = Settings.builder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 0)
@@ -173,7 +171,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         assertTrue(resp1.contains("\"test-field-1\":[6.0,6.0]"));
     }
 
-    public void testSyntheticSourceReindex_whenEnabledSynthetic_thenFailed() throws IOException {
+    public void testSyntheticSourceReindex_whenEnabledSynthetic_thenFailed() throws IOException, ParseException {
         String indexNameWithoutSynthetic = "test-index-no-synthetic";
         String reindexNameWithoutSynthetic = "test-reindex-no-synthetic";
         String fieldName = "test-field-1";
@@ -202,8 +200,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
                 .endObject()
                 .endObject()
                 .endObject();
-        String mapping = Strings.toString(builder);
-
+        String mapping = builder.toString();
         Settings indexSettingWithoutSynthetic = Settings.builder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 0)

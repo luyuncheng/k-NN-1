@@ -429,10 +429,10 @@ public class KNNSettings {
             // In some UTs we identified that cluster setting is not set properly an leads to NPE. This check will avoid
             // those cases and will still return the default value.
             log.warn(
-                    "Unable to get setting value {} from cluster settings. Using default value as {}",
-                    KNN_FAISS_AVX2_DISABLED,
-                    KNN_DEFAULT_FAISS_AVX2_DISABLED_VALUE,
-                    e
+                "Unable to get setting value {} from cluster settings. Using default value as {}",
+                KNN_FAISS_AVX2_DISABLED,
+                KNN_DEFAULT_FAISS_AVX2_DISABLED_VALUE,
+                e
             );
             return KNN_DEFAULT_FAISS_AVX2_DISABLED_VALUE;
         }
