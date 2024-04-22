@@ -423,7 +423,19 @@ public class KNNSettings {
     }
 
     public static boolean isFaissAVX2Disabled() {
-        return KNNSettings.state().getSettingValue(KNNSettings.KNN_FAISS_AVX2_DISABLED);
+        try {
+            return KNNSettings.state().getSettingValue(KNNSettings.KNN_FAISS_AVX2_DISABLED);
+        } catch (Exception e) {
+            // In some UTs we identified that cluster setting is not set properly an leads to NPE. This check will avoid
+            // those cases and will still return the default value.
+            log.warn(
+                    "Unable to get setting value {} from cluster settings. Using default value as {}",
+                    KNN_FAISS_AVX2_DISABLED,
+                    KNN_DEFAULT_FAISS_AVX2_DISABLED_VALUE,
+                    e
+            );
+            return KNN_DEFAULT_FAISS_AVX2_DISABLED_VALUE;
+        }
     }
 
     public static Integer getFilteredExactSearchThreshold(final String indexName) {
@@ -432,6 +444,14 @@ public class KNNSettings {
             .index(indexName)
             .getSettings()
             .getAsInt(ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD, ADVANCED_FILTERED_EXACT_SEARCH_THRESHOLD_DEFAULT_VALUE);
+    }
+
+    /**
+     * check this index enabled/disabled synthetic source
+     * @param indexSettings settings
+     */
+    public static boolean isKNNSyntheticEnabled(IndexSettings indexSettings) {
+        return indexSettings.getValue(KNN_SYNTHETIC_SOURCE_ENABLED_SETTING);
     }
 
     public void initialize(Client client, ClusterService clusterService) {
@@ -491,6 +511,10 @@ public class KNNSettings {
                 );
             }
         });
+    }
+
+    public static ByteSizeValue getVectorStreamingMemoryLimit() {
+        return KNNSettings.state().getSettingValue(KNN_VECTOR_STREAMING_MEMORY_LIMIT_IN_MB);
     }
 
     /**
