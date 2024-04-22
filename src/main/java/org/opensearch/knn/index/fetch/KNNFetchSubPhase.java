@@ -94,6 +94,7 @@ public class KNNFetchSubPhase implements FetchSubPhase {
 
             if (hasNested) {
                 //TODO handle nested field
+                throw new UnsupportedOperationException("knn synthetic source do not support nested field");
             }
             for (DocValueField f : fields) {
                 if (maps.containsKey(f.field)) {
