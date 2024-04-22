@@ -38,7 +38,6 @@ import java.util.Map;
 
 import static org.opensearch.knn.common.KNNConstants.BYTES_PER_KILOBYTES;
 
-
 /**
  * Fetch sub phase which pull data from doc values.
  * and fulfill the value into source map
@@ -59,8 +58,10 @@ public class KNNFetchSubPhase implements FetchSubPhase {
         for (MappedFieldType mappedFieldType : mapperService.fieldTypes()) {
             if (mappedFieldType != null && mappedFieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType) {
                 String fieldName = mappedFieldType.name();
-                ValueFetcher fetcher = new DocValueFetcher(mappedFieldType.docValueFormat(null, null),
-                        fetchContext.searchLookup().doc().getForField(mappedFieldType));
+                ValueFetcher fetcher = new DocValueFetcher(
+                    mappedFieldType.docValueFormat(null, null),
+                    fetchContext.searchLookup().doc().getForField(mappedFieldType)
+                );
                 fields.add(new DocValueField(fieldName, fetcher));
             }
         }
@@ -88,19 +89,19 @@ public class KNNFetchSubPhase implements FetchSubPhase {
             SearchHit hit = hitContext.hit();
             Map<String, Object> maps = hit.getSourceAsMap();
             if (maps == null) {
-                //when source is disabled, return
+                // when source is disabled, return
                 return;
             }
 
             if (hasNested) {
-                //TODO handle nested field
+                // TODO handle nested field
                 throw new UnsupportedOperationException("knn synthetic source do not support nested field");
             }
             for (DocValueField f : fields) {
                 if (maps.containsKey(f.field)) {
                     continue;
                 }
-                List<Object> docValuesSource =  f.fetcher.fetchValues(hitContext.sourceLookup());
+                List<Object> docValuesSource = f.fetcher.fetchValues(hitContext.sourceLookup());
                 if (docValuesSource.size() > 0) {
                     maps.put(f.field, docValuesSource.get(0));
                 }

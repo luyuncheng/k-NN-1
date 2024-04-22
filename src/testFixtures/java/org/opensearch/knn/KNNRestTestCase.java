@@ -653,14 +653,18 @@ public class KNNRestTestCase extends ODFERestTestCase {
     protected Map<String, Object> doReindex(final String sourceIndex, final String destinationIndex) throws IOException {
         Request request = new Request("POST", "/_reindex?refresh=true");
         request.setJsonEntity(
-                "{\n"
-                    + "  \"source\":{\n"
-                    + "    \"index\":\"" + sourceIndex + "\"\n"
-                    + "  },\n"
-                    + "  \"dest\":{\n"
-                    + "    \"index\":\"" + destinationIndex + "\"\n"
-                    + "  }\n"
-                    + "}"
+            "{\n"
+                + "  \"source\":{\n"
+                + "    \"index\":\""
+                + sourceIndex
+                + "\"\n"
+                + "  },\n"
+                + "  \"dest\":{\n"
+                + "    \"index\":\""
+                + destinationIndex
+                + "\"\n"
+                + "  }\n"
+                + "}"
         );
         Map<String, Object> response = entityAsMap(client().performRequest(request));
         return response;

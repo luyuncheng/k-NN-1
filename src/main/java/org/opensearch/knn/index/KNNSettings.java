@@ -255,10 +255,10 @@ public class KNNSettings {
     );
 
     public static final Setting<Boolean> KNN_SYNTHETIC_SOURCE_ENABLED_SETTING = Setting.boolSetting(
-            KNN_SYNTHETIC_SOURCE_ENABLED,
-            false,
-            IndexScope,
-            Dynamic
+        KNN_SYNTHETIC_SOURCE_ENABLED,
+        false,
+        IndexScope,
+        Dynamic
     );
 
     /**
