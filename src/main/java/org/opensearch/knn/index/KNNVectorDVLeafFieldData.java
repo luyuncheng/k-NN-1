@@ -5,15 +5,16 @@
 
 package org.opensearch.knn.index;
 
+import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.DocValues;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.BytesRefBuilder;
 import org.opensearch.index.fielddata.LeafFieldData;
 import org.opensearch.index.fielddata.ScriptDocValues;
 import org.opensearch.index.fielddata.SortedBinaryDocValues;
+import org.opensearch.index.mapper.DocValueFetcher;
+import org.opensearch.search.DocValueFormat;
 
 import java.io.IOException;
 
