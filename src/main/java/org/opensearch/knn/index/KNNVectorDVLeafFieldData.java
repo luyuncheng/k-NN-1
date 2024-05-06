@@ -71,7 +71,7 @@ public class KNNVectorDVLeafFieldData implements LeafFieldData {
             public boolean advanceExact(int docId) throws IOException {
                 if (binaryDocValues.advanceExact(docId)) {
                     docExists = true;
-                    floats = vectorDataType.getVectorFromDocValues(binaryDocValues.binaryValue());
+                    floats = vectorDataType.getVectorFromBytesRef(binaryDocValues.binaryValue());
                     return docExists;
                 }
                 docExists = false;
