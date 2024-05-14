@@ -450,7 +450,7 @@ public class KNNSettings {
      * check this index enabled/disabled synthetic source
      * @param indexSettings settings
      */
-    public static boolean isKNNSyntheticEnabled(IndexSettings indexSettings) {
+    public static boolean isKNNSyntheticSourceEnabled(IndexSettings indexSettings) {
         return indexSettings.getValue(KNN_SYNTHETIC_SOURCE_ENABLED_SETTING);
     }
 
