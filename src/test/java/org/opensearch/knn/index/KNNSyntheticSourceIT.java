@@ -163,7 +163,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         XContentBuilder builder = constructNestedMappingBuilder();
 
         String mapping = builder.toString();
-        System.out.println("mapping debug:" + mapping);
         Settings indexSettingWithSynthetic = Settings.builder()
             .put("number_of_shards", 1)
             .put("number_of_replicas", 0)
@@ -178,7 +177,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
 
         Response responseWithSynthetic = queryNestedField(indexNameWithSynthetic, 10, vector);
         String resp1 = EntityUtils.toString(responseWithSynthetic.getEntity());
-        System.out.println(resp1);
         assertTrue(resp1.contains("\"nested-field\":[{\"test-nested-field-1\":[6.0,6.0]},{\"test-nested-field-1\":[6.0,6.0]}]"));
     }
 
@@ -188,7 +186,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         XContentBuilder builder = constructNestedMappingBuilder();
 
         String mapping = builder.toString();
-        System.out.println("mapping debug:" + mapping);
         Settings indexSettingWithSynthetic = Settings.builder()
             .put("number_of_shards", 1)
             .put("number_of_replicas", 0)
@@ -203,7 +200,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
 
         Response responseWithSynthetic = queryNestedField(indexNameWithSynthetic, 10, vector);
         String resp1 = EntityUtils.toString(responseWithSynthetic.getEntity());
-        System.out.println(resp1);
         assertFalse(resp1.contains("\"nested-field\":[{\"test-nested-field-1\":[6.0,6.0]},{\"test-nested-field-1\":[6.0,6.0]}]"));
     }
 
@@ -213,7 +209,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         XContentBuilder builder = constructNestedMappingBuilder();
 
         String mapping = builder.toString();
-        System.out.println("mapping debug:" + mapping);
         Settings indexSettingWithSynthetic = Settings.builder()
             .put("number_of_shards", 1)
             .put("number_of_replicas", 0)
@@ -249,7 +244,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         Response responseWithSynthetic = queryNestedField(indexNameWithSynthetic, 10, vector, null, null, null, RestStatus.OK);
 
         String resp1 = EntityUtils.toString(responseWithSynthetic.getEntity());
-        System.out.println("Resp" + resp1);
         assertTrue(
             resp1.contains(
                 "{\"nested-field\":[{\"nested_numeric\":1.0,\"test-nested-field-1\":[6.0,6.0]},{\"nested_numeric\":2.0,\"test-nested-field-1\":[6.0,6.0]}]}}]}"
@@ -263,7 +257,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         XContentBuilder builder = constructNestedMappingBuilder();
 
         String mapping = builder.toString();
-        System.out.println("mapping debug:" + mapping);
         Settings indexSettingWithSynthetic = Settings.builder()
             .put("number_of_shards", 1)
             .put("number_of_replicas", 0)
@@ -372,6 +365,72 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         assertTrue(respUpdate.contains("\"test-field-1\":[8.0,8.0]"));
     }
 
+    public void testSyntheticSourceUpdateOtherField_whenEnabledSynthetic_thenReturnNothing() throws IOException, ParseException {
+        String indexNameWithSynthetic = "test-index-synthetic";
+        String fieldName = "test-field-1";
+        String fieldName2 = "test-field-2";
+        Integer dimension = 2;
+
+        KNNMethod hnswMethod = KNNEngine.FAISS.getMethod(KNNConstants.METHOD_HNSW);
+        SpaceType spaceType = SpaceType.L2;
+
+        // Create an index
+        XContentBuilder builder = XContentFactory.jsonBuilder()
+            .startObject()
+            .startObject("_source")
+            .startArray("excludes")
+            .value(fieldName)
+            .endArray()
+            .endObject()
+            .startObject("properties")
+            .startObject(fieldName)
+            .field("type", "knn_vector")
+            .field("dimension", dimension)
+            .startObject(KNNConstants.KNN_METHOD)
+            .field(KNNConstants.NAME, hnswMethod.getMethodComponent().getName())
+            .field(KNNConstants.METHOD_PARAMETER_SPACE_TYPE, spaceType.getValue())
+            .field(KNNConstants.KNN_ENGINE, KNNEngine.FAISS.getName())
+            .endObject()
+            .endObject()
+            .startObject(fieldName2)
+            .field("type", "knn_vector")
+            .field("dimension", dimension)
+            .startObject(KNNConstants.KNN_METHOD)
+            .field(KNNConstants.NAME, hnswMethod.getMethodComponent().getName())
+            .field(KNNConstants.METHOD_PARAMETER_SPACE_TYPE, spaceType.getValue())
+            .field(KNNConstants.KNN_ENGINE, KNNEngine.FAISS.getName())
+            .endObject()
+            .endObject()
+            .endObject()
+            .endObject();
+
+        String mapping = builder.toString();
+        Settings indexSettingWithSynthetic = Settings.builder()
+            .put("number_of_shards", 1)
+            .put("number_of_replicas", 0)
+            .put("index.knn.synthetic_source.enabled", true)
+            .put("index.knn", true)
+            .build();
+
+        createKnnIndex(indexNameWithSynthetic, indexSettingWithSynthetic, mapping);
+
+        Float[] vector = { 6.0f, 6.0f };
+        addKnnDoc(indexNameWithSynthetic, "1", fieldName, vector);
+        float[] queryVector = { 6.0f, 6.0f };
+
+        Response responseWithSynthetic = searchKNNIndex(indexNameWithSynthetic, new KNNQueryBuilder(fieldName, queryVector, 10), 10);
+        String resp1 = EntityUtils.toString(responseWithSynthetic.getEntity());
+        assertTrue(resp1.contains("\"test-field-1\":[6.0,6.0]"));
+
+        Float[] vector2 = { 8.0f, 8.0f };
+        updateKnnDoc(indexNameWithSynthetic, "1", fieldName2, vector2);
+        float[] queryVector2 = { 8.0f, 8.0f };
+        Response responseAfterUpdate = searchKNNIndex(indexNameWithSynthetic, new KNNQueryBuilder(fieldName2, queryVector2, 10), 10);
+        String respUpdate = EntityUtils.toString(responseAfterUpdate.getEntity());
+        assertTrue(respUpdate.contains("\"test-field-2\":[8.0,8.0]"));
+        assertFalse(respUpdate.contains("\"test-field-1\""));
+    }
+
     private Response queryNestedField(final String index, final int k, final Object[] vector) throws IOException {
         return queryNestedField(index, k, vector, null, null, null, RestStatus.OK);
     }
@@ -407,8 +466,7 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
         builder.endObject().endObject().endObject().endObject().endObject().endObject();
         String requestStr = builder.toString();
         Request request = new Request("POST", "/" + index + "/_search");
-        System.out.println("DEBUG Query DSL:" + requestStr);
-        request.setJsonEntity(builder.toString());
+        request.setJsonEntity(requestStr);
         Response response;
 
         response = client().performRequest(request);
@@ -449,7 +507,6 @@ public class KNNSyntheticSourceIT extends KNNRestTestCase {
 
         Request request = new Request("POST", "/" + index + "/_doc/" + docId + "?refresh=true");
         String docStr = builder.toString();
-        System.out.println("DEBUG index:" + docStr);
         request.setJsonEntity(docStr);
         client().performRequest(request);
 

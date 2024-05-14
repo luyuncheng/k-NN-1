@@ -153,7 +153,7 @@ public class KNNFetchSubPhase implements FetchSubPhase {
                     // nested array in one nested path
                     ArrayList nestedDocList = (ArrayList) nestedObj;
 
-                    log.info(
+                    log.debug(
                         "object mapper: nested:"
                             + objectMapper.nested().isNested()
                             + " Value:"
@@ -192,7 +192,6 @@ public class KNNFetchSubPhase implements FetchSubPhase {
                         }
                         if (offset < nestedDocList.size()) {
                             Object o2 = nestedDocList.get(offset);
-                            log.info("arraylist value:" + o2.getClass().getName());
                             if (o2 instanceof Map) {
                                 Map<String, Object> o2map = (Map<String, Object>) o2;
                                 String suffix = f.field.substring(path.length() + 1);
