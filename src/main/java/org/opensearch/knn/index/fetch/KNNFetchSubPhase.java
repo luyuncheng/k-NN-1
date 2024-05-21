@@ -60,8 +60,8 @@ public class KNNFetchSubPhase implements FetchSubPhase {
     @Override
     public FetchSubPhaseProcessor getProcessor(FetchContext fetchContext) throws IOException {
         IndexSettings indexSettings = fetchContext.getIndexSettings();
-        if (!KNNSettings.isKNNSyntheticEnabled(indexSettings)) {
-            log.debug("Synthetic is disabled");
+        if (!KNNSettings.isKNNSyntheticSourceEnabled(indexSettings)) {
+            log.debug("Synthetic is disabled for index: {}", fetchContext.getIndexName());
             return null;
         }
         MapperService mapperService = fetchContext.mapperService();
@@ -206,7 +206,15 @@ public class KNNFetchSubPhase implements FetchSubPhase {
                              *    {"nested_numeric": 2, "nested_vector": [3.1, 2.3]}
                              *  ]
                              */
-                            throw new UnsupportedOperationException("Nested Field should not be empty");
+
+                            throw new UnsupportedOperationException(
+                                String.format(
+                                    "\"Nested Path \"%s\" in Field \"%s\" with _ID \"%s\" can not be empty\"",
+                                    path,
+                                    f.field,
+                                    hit.getId()
+                                )
+                            );
                         }
                     }
                 }
@@ -214,7 +222,8 @@ public class KNNFetchSubPhase implements FetchSubPhase {
         }
     }
 
-    private static class DocValueField {
+    @Getter
+    public static class DocValueField {
         private final String field;
         private final ValueFetcher fetcher;
 
