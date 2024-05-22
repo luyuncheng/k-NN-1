@@ -95,7 +95,8 @@ public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
 
     public void testGetBytesValues() {
         KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(leafReaderContext.reader(), "", VectorDataType.FLOAT);
-        expectThrows(UnsupportedOperationException.class, () -> leafFieldData.getBytesValues());
+
+        assertNotNull(leafFieldData.getBytesValues());
     }
 
     public void testGetLeafValueFetcher() {
