@@ -5,7 +5,6 @@
 
 package org.opensearch.knn.index;
 
-import org.opensearch.index.fielddata.SortedBinaryDocValues;
 import org.opensearch.knn.KNNTestCase;
 import org.apache.lucene.tests.analysis.MockAnalyzer;
 import org.apache.lucene.document.BinaryDocValuesField;
