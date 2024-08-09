@@ -87,7 +87,7 @@ public interface NativeMemoryAllocation {
      * @see #decRef
      * @throws IllegalStateException iff the reference counter can not be incremented.
      */
-    default void incRef() { }
+    default void incRef() {}
 
     /**
      * Decreases the refCount of this  instance. If the refCount drops to 0, then this
@@ -97,13 +97,15 @@ public interface NativeMemoryAllocation {
      *
      * @return returns {@code true} if the ref count dropped to 0 as a result of calling this method
      */
-    default boolean decRef() { return true; }
+    default boolean decRef() {
+        return true;
+    }
 
     /**
      * Represents native indices loaded into memory. Because these indices are backed by files, they should be
      * freed when file is deleted.
      */
-    class IndexAllocation implements NativeMemoryAllocation{
+    class IndexAllocation implements NativeMemoryAllocation {
 
         private final ExecutorService executor;
         private final long memoryAddress;
@@ -192,8 +194,8 @@ public interface NativeMemoryAllocation {
 
         @Override
         public void close() {
-            if(!closed && refCounted.refCount() > 0) {
-            refCounted.close();
+            if (!closed && refCounted.refCount() > 0) {
+                refCounted.close();
             }
         }
 
