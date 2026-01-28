@@ -200,8 +200,9 @@ struct OpenSearchMergeInterruptCallback : faiss::InterruptCallback {
 
     OpenSearchMergeInterruptCallback(JNIUtil *jniUtil) {
         jutil = jniUtil;
-        mergeHelperClass = jniUtil->FindClass(env,"org/apache/lucene/index/KNNMergeHelper");
-        isAbortedMethod = jniUtil->FindMethod(env, "org/apache/lucene/index/KNNMergeHelper", "isMergeAborted");
+        jenv = jutil->GetJNICurrentEnv();
+        mergeHelperClass = jniUtil->FindClass(jenv,"org/apache/lucene/index/KNNMergeHelper");
+        isAbortedMethod = jniUtil->FindMethod(jenv, "org/apache/lucene/index/KNNMergeHelper", "isMergeAborted");
     }
     bool want_interrupt () override {
         JNIEnv* jenv;
