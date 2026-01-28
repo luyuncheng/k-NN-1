@@ -121,7 +121,7 @@ void knn_jni::JNIUtil::CatchCppExceptionAndThrowJava(JNIEnv* env)
         throw;
     }
     catch (const std::bad_alloc& rhs) {
-        this->ThrowJavaException(env, "java/io/IOException", rhs.e());
+        this->ThrowJavaException(env, "java/io/IOException", rhs.what());
     }
     catch (const std::runtime_error& re) {
         this->ThrowJavaException(env, "java/lang/Exception", re.what());
