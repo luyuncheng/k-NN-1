@@ -220,11 +220,7 @@ namespace knn_jni {
         void * GetPrimitiveArrayCritical(JNIEnv * env, jarray array, jboolean *isCopy) final;
         void ReleasePrimitiveArrayCritical(JNIEnv * env, jarray array, void *carray, jint mode) final;
         JNIEnv* GetJNICurrentEnv() final;
-            // Obtain the JNIEnv from the VM and confirm JNI_VERSION
-            JNIEnv* env;
-            if (vm->GetEnv((void**)&env, KNN_FAISS_JNI_VERSION) != JNI_OK) {
-                return JNI_ERR;
-            }
+
     private:
         JavaVM* vm;
         std::unordered_map<std::string, jclass> cachedClasses;
