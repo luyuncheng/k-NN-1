@@ -198,12 +198,16 @@ public:
 
 struct OpenSearchMergeInterruptCallback : faiss::InterruptCallback {
 
-    OpenSearchMergeInterruptCallback(JNIUtil *jniUtil, JNIEnv *env) {
-        jenv = env;
+    OpenSearchMergeInterruptCallback(JNIUtil *jniUtil) {
+        jutil = jniUtil;
         mergeHelperClass = jniUtil->FindClass(env,"org/apache/lucene/index/KNNMergeHelper");
         isAbortedMethod = jniUtil->FindMethod(env, "org/apache/lucene/index/KNNMergeHelper", "isMergeAborted");
     }
-    bool want_interrupt () override {
+    bool static want_interrupt () override {
+        JNIEnv* jenv;
+
+        jenv = jutil->GetJNICurrentEnv();
+
         if (jenv == nullptr) {
             std::cerr << "JNIEnv Not Find\n";
             return false;
@@ -216,9 +220,10 @@ struct OpenSearchMergeInterruptCallback : faiss::InterruptCallback {
             std::cerr << "is MergeAborted Not Find\n";
             return false;
         }
+
         return (bool) jenv->CallStaticBooleanMethod(mergeHelperClass, isAbortedMethod);
     }
-    JNIEnv *jenv;
+    JNIUtil *jutil;
     jclass mergeHelperClass;
     jmethodID isAbortedMethod;
 };
