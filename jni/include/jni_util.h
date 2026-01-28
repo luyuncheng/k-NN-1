@@ -219,7 +219,7 @@ namespace knn_jni {
         void CallNonvirtualVoidMethodA(JNIEnv * env, jobject obj, jclass clazz, jmethodID methodID, jvalue* args) final;
         void * GetPrimitiveArrayCritical(JNIEnv * env, jarray array, jboolean *isCopy) final;
         void ReleasePrimitiveArrayCritical(JNIEnv * env, jarray array, void *carray, jint mode) final;
-        JNIEnv* GetJNICurrentEnv() final;
+        JNIEnv* GetJNICurrentEnv();
 
     private:
         JavaVM* vm;
